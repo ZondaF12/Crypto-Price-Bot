@@ -84,8 +84,7 @@ module.exports = {
       } catch (e) {
         console.error(e.toString());
       }
-      if (coinSymbol === "BANANA") coinID = res.body.coins[1].id;
-      else coinID = res.body.coins[0].id;
+      coinID = res.body.coins[0].id;
 
       symbolCheck = res.body.coins[0].symbol;
       if (coinSymbol != symbolCheck) coinID = res.body.coins[1].id;
