@@ -170,7 +170,7 @@ module.exports = {
         `Crypto Alert for ${coinSymbol.toUpperCase()} removed from ${targetChannel}`
       );
 
-      await followSchema.remove({
+      await followSchema.deleteOne({
         symbol: coinSymbol,
         guildId: guild.id,
         channelId: targetChannel.id,
