@@ -1,5 +1,16 @@
 const { MessageEmbed } = require("discord.js");
 const got = require("got");
+const getSymbolFromCurrency = require("currency-symbol-map");
+
+let coinID,
+  coinSymbol,
+  coinName,
+  coinPrice,
+  coin24h,
+  coin7d,
+  coinLogo,
+  symbolCheck,
+  currencyCode;
 
 module.exports = {
   category: "Crypto",
@@ -8,20 +19,6 @@ module.exports = {
   // testOnly: true,
 
   callback: ({ message }) => {
-    const currencyFotmat = new Intl.NumberFormat("en-GB", {
-      style: "currency",
-      currency: "GBP",
-    });
-
-    let coinID,
-      coinSymbol,
-      coinName,
-      coinPrice,
-      coin24h,
-      coin7d,
-      coinLogo,
-      symbolCheck;
-
     priceRequest(message);
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -29,11 +26,10 @@ module.exports = {
     async function priceRequest(msg) {
       coinSymbol = msg.content.split(" ")[1];
       coinSymbol = coinSymbol.toUpperCase();
+      currencyCode = msg.content.split(" ")[2];
 
       await getID(coinSymbol);
       await priceRounding();
-
-      let linkName = coinName.replace(/\s/g, "-"); // Replaces any spaces in the coins name with - to match the links
 
       const embed = new MessageEmbed()
         .setColor("#fd2973")
@@ -109,25 +105,44 @@ module.exports = {
         console.error(e.toString());
       }
 
+      if (getSymbolFromCurrency(currencyCode) === undefined) {
+        currencyCode = "gbp";
+      }
+
       coinName = res.body.name;
-      coinPrice = res.body.market_data.current_price.gbp;
+      coinPrice = res.body.market_data.current_price[currencyCode];
       coin24h =
-        res.body.market_data.price_change_percentage_24h_in_currency.gbp;
-      coin7d = res.body.market_data.price_change_percentage_7d_in_currency.gbp;
+        res.body.market_data.price_change_percentage_24h_in_currency[
+          currencyCode
+        ];
+      coin7d =
+        res.body.market_data.price_change_percentage_7d_in_currency[
+          currencyCode
+        ];
       coinLogo = res.body.image.large;
     }
 
     async function priceRounding() {
       if (coinPrice < 10 && coinPrice > 1) {
-        coinPrice = `£${parseFloat(coinPrice.toFixed(3))}`;
+        coinPrice = `${getSymbolFromCurrency(currencyCode)}${parseFloat(
+          coinPrice.toFixed(3)
+        )}`;
       } else if (coinPrice < 1 && coinPrice > 0.1) {
-        coinPrice = `£${parseFloat(coinPrice.toFixed(4))}`;
+        coinPrice = `${getSymbolFromCurrency(currencyCode)}${parseFloat(
+          coinPrice.toFixed(4)
+        )}`;
       } else if (coinPrice < 0.1 && coinPrice > 0.001) {
-        coinPrice = `£${parseFloat(coinPrice.toFixed(5))}`;
+        coinPrice = `${getSymbolFromCurrency(currencyCode)}${parseFloat(
+          coinPrice.toFixed(5)
+        )}`;
       } else if (coinPrice < 0.001) {
-        coinPrice = `£${parseFloat(coinPrice.toFixed(9))}`;
+        coinPrice = `${getSymbolFromCurrency(currencyCode)}${parseFloat(
+          coinPrice.toFixed(9)
+        )}`;
       } else {
-        coinPrice = currencyFotmat.format(coinPrice);
+        coinPrice = `${getSymbolFromCurrency(
+          currencyCode
+        )}${new Intl.NumberFormat().format(coinPrice)}`;
       }
     }
 
