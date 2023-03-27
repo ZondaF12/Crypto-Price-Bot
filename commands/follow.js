@@ -45,7 +45,7 @@ module.exports = {
       coinSymbol = symbol;
       coinSymbol = coinSymbol.toUpperCase();
 
-      await getID(coinSymbol);
+      await getPrice(coinSymbol);
       await priceRounding();
       channel = client.channels.cache.get(channelID);
 
@@ -66,42 +66,17 @@ module.exports = {
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    async function getID(coinSymbol) {
-      const headers = {
-        accept: "application/json",
-      };
-
-      let res;
-
-      try {
-        res = await got.get(
-          `https://api.coingecko.com/api/v3/search?query=${coinSymbol}`,
-          {
-            headers,
-            responseType: "json",
-          }
-        );
-      } catch (e) {
-        console.error(e.toString());
-      }
-      coinID = res.body.coins[0].id;
-
-      symbolCheck = res.body.coins[0].symbol;
-      if (coinSymbol != symbolCheck) coinID = res.body.coins[1].id;
-
-      await getPrice(coinID);
-    }
-
     async function getPrice(coinID) {
       const headers = {
         accept: "application/json",
+        "X-CMC_PRO_API_KEY": process.env.CMC_API_KEY,
       };
 
       let res;
 
       try {
         res = await got.get(
-          `https://api.coingecko.com/api/v3/coins/${coinID}?localization=false&tickers=false`,
+          `https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest?symbol=${coinID}&convert=GBP`,
           {
             headers,
             responseType: "json",
@@ -111,9 +86,11 @@ module.exports = {
         console.error(e.toString());
       }
 
-      coinName = res.body.name;
-      coinPrice = res.body.market_data.current_price.gbp;
-      coinLogo = res.body.image.large;
+      const coinRequested = res.body.data[coinID][0];
+
+      coinName = coinRequested.name;
+      coinPrice = coinRequested.quote.GBP.price;
+      coinLogo = `https://s2.coinmarketcap.com/static/img/coins/128x128/${coinRequested.id}.png`;
     }
 
     async function priceRounding() {
@@ -147,13 +124,6 @@ module.exports = {
     args.pop();
 
     const [task, coinSymbol] = args;
-
-    // if (isNaN(time)) {
-    //   message.reply(
-    //     `Please set the time in hours as a NUMBER, you sent ${time}`
-    //   );
-    //   return;
-    // }
 
     if (task === "add") {
       message.reply(

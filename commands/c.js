@@ -28,7 +28,7 @@ module.exports = {
       coinSymbol = coinSymbol.toUpperCase();
       currencyCode = msg.content.split(" ")[2];
 
-      await getID(coinSymbol);
+      await getPrice(coinSymbol);
       await priceRounding();
 
       const embed = new MessageEmbed()
@@ -60,42 +60,21 @@ module.exports = {
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    async function getID(coinSymbol) {
-      const headers = {
-        accept: "application/json",
-      };
-
-      let res;
-
-      try {
-        res = await got.get(
-          `https://api.coingecko.com/api/v3/search?query=${coinSymbol}`,
-          {
-            headers,
-            responseType: "json",
-          }
-        );
-      } catch (e) {
-        console.error(e.toString());
-      }
-      coinID = res.body.coins[0].id;
-
-      symbolCheck = res.body.coins[0].symbol;
-      if (coinSymbol != symbolCheck) coinID = res.body.coins[1].id;
-
-      await getPrice(coinID);
-    }
-
     async function getPrice(coinID) {
       const headers = {
         accept: "application/json",
+        "X-CMC_PRO_API_KEY": process.env.CMC_API_KEY,
       };
+
+      if (getSymbolFromCurrency(currencyCode) === undefined) {
+        currencyCode = "GBP";
+      } else currencyCode = currencyCode.toUpperCase();
 
       let res;
 
       try {
         res = await got.get(
-          `https://api.coingecko.com/api/v3/coins/${coinID}?localization=false&tickers=false`,
+          `https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest?symbol=${coinID}&convert=${currencyCode}`,
           {
             headers,
             responseType: "json",
@@ -105,21 +84,13 @@ module.exports = {
         console.error(e.toString());
       }
 
-      if (getSymbolFromCurrency(currencyCode) === undefined) {
-        currencyCode = "gbp";
-      }
+      const coinRequested = res.body.data[coinID][0];
 
-      coinName = res.body.name;
-      coinPrice = res.body.market_data.current_price[currencyCode];
-      coin24h =
-        res.body.market_data.price_change_percentage_24h_in_currency[
-          currencyCode
-        ];
-      coin7d =
-        res.body.market_data.price_change_percentage_7d_in_currency[
-          currencyCode
-        ];
-      coinLogo = res.body.image.large;
+      coinName = coinRequested.name;
+      coinPrice = coinRequested.quote[currencyCode].price;
+      coin24h = coinRequested.quote[currencyCode].percent_change_24h;
+      coin7d = coinRequested.quote[currencyCode].percent_change_7d;
+      coinLogo = `https://s2.coinmarketcap.com/static/img/coins/128x128/${coinRequested.id}.png`;
     }
 
     async function priceRounding() {
