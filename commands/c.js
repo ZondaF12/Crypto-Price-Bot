@@ -2,15 +2,14 @@ const { MessageEmbed } = require("discord.js");
 const got = require("got");
 const getSymbolFromCurrency = require("currency-symbol-map");
 
-let coinID,
-    coinSymbol,
+let coinSymbol,
     coinName,
     coinPrice,
     coin24h,
     coin7d,
     coinLogo,
-    symbolCheck,
-    currencyCode;
+    currencyCode,
+    coinSlug;
 
 module.exports = {
     category: "Crypto",
@@ -35,7 +34,7 @@ module.exports = {
                 .setColor("#fd2973")
                 .setTitle("Cryptocurrency Price Tracker")
                 .setDescription(coinName)
-                .setURL(`https://coinmarketcap.com/currencies/${coinName}`)
+                .setURL(`https://coinmarketcap.com/currencies/${coinSlug}`)
                 .setThumbnail(coinLogo)
                 .addFields(
                     {
@@ -89,6 +88,7 @@ module.exports = {
             const coinRequested = res.body.data[coinID][0];
 
             coinName = coinRequested.name;
+            coinSlug = coinRequested.slug;
             coinPrice = coinRequested.quote[currencyCode].price;
             coin24h = coinRequested.quote[currencyCode].percent_change_24h;
             coin7d = coinRequested.quote[currencyCode].percent_change_7d;
